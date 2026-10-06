@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>양자역학: 리얼 이중슬릿 실험 시뮬레이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #0b1120;
+            color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #020617;
+            border-radius: 1.5rem;
+            box-shadow: 0 0 50px rgba(14, 165, 233, 0.15), inset 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid #1e293b;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn-interactive {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-interactive:hover {
+            transform: translateY(-3px) scale(1.02);
+            filter: brightness(1.1);
+        }
+        .btn-interactive:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .text-gradient {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- 왼쪽: 시뮬레이터 캔버스 -->
+        <div class="lg:col-span-8 flex flex-col w-full">
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-2 text-center text-gradient bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400">
+                🔬 리얼리티 이중슬릿 시뮬레이터
+            </h1>
+            <p class="text-slate-400 text-center mb-6">파동의 간섭과 입자의 무작위 충돌을 직접 확인하세요!</p>
+            
+            <div id="canvas-wrapper">
+                <canvas id="simCanvas" width="800" height="600"></canvas>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 조작 패널 -->
+        <div class="lg:col-span-4 flex flex-col gap-6 w-full lg:pt-20">
+            
+            <!-- 상태 표시 패널 -->
+            <div class="bg-slate-800/80 backdrop-blur p-6 rounded-2xl shadow-xl border border-slate-700">
+                <div class="flex items-center gap-3 mb-4">
+                    <div id="statusDot" class="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee] animate-pulse"></div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">실험 원리</h2>
+                </div>
+                
+                <div class="bg-slate-900 p-5 rounded-xl border border-slate-700/50 min-h-[160px] flex items-center">
+                    <p id="statusText" class="text-slate-300 leading-relaxed text-[15px]">
+                        <strong class="text-cyan-400 text-xl mb-2 block">🌊 관측 안 함 (파동성)</strong>
+                        전자가 물결처럼 퍼져나갑니다.<br>
+                        파동이 두 구멍을 동시에 통과한 뒤, 서로 겹치면서 <b>(간섭 현상)</b> 스크린에 여러 줄의 선명한 띠를 만듭니다.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/80 backdrop-blur p-6 rounded-2xl shadow-xl border border-slate-700">
+                <h2 class="text-lg font-bold mb-5 text-slate-300">컨트롤</h2>
+                
+                <div class="flex flex-col gap-4">
+                    <button id="toggleObserverBtn" class="btn-interactive relative overflow-hidden group w-full py-4 px-4 rounded-xl font-bold text-white bg-gradient-to-r from-rose-500 to-pink-600 shadow-[0_4px_15px_rgba(244,63,94,0.3)]">
+                        <span id="observerIcon" class="relative z-10 flex items-center justify-center gap-2 text-lg">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0l3.59 3.59"></path></svg>
+                            관측 카메라 켜기 (입자로 보기)
+                        </span>
+                    </button>
+
+                    <button id="fireBtn" class="btn-interactive w-full py-4 px-4 rounded-xl font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_4px_15px_rgba(6,182,212,0.3)] text-lg">
+                        🚀 실험 시작 (발사)
+                    </button>
+
+                    <button id="clearBtn" class="btn-interactive w-full py-3 px-4 rounded-xl font-semibold text-slate-300 bg-slate-700 hover:bg-slate-600 border border-slate-600 mt-2">
+                        🧹 필름 초기화
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const toggleObserverBtn = document.getElementById('toggleObserverBtn');
+        const observerIcon = document.getElementById('observerIcon');
+        const fireBtn = document.getElementById('fireBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusText = document.getElementById('statusText');
+        const statusDot = document.getElementById('statusDot');
+
+        const CAN_W = 800;
+        const CAN_H = 600;
+        
+        // 레이아웃 좌표 설정
+        const SCREEN_TOP = 20;   
+        const SCREEN_BOTTOM = 110; 
+        const SCREEN_Y = 110;    
+        const BARRIER_Y = 320;   
+        const GUN_Y = 560;       
+        const GUN_X = CAN_W / 2;
+        
+        // 슬릿 설정 (입자가 넉넉히 통과할 수 있게 간격과 너비 조절)
+        const SLIT_WIDTH = 24;
+        const SLIT_1_X = 320;
+        const SLIT_2_X = 480;
+
+        let isObserving = false; // 카메라 켜짐 여부 (false: 파동, true: 입자)
+        let isFiring = false;
+        
+        let screenHits = new Array(CAN_W).fill(0);
+        let maxHitCount = 1;
+        
+        // 객체 배열
+        let particles = []; // 입자 모드용 총알들
+        let waves = [];     // 파동 모드용 물결들
+
+        // 파동 간섭 무늬 수학 모델 (빛의 간섭 공식 기반)
+        const lambda = 22; // 파장 (무늬 간격 결정)
+        function getWaveProbability(x) {
+            let d1 = Math.sqrt(Math.pow(x - SLIT_1_X, 2) + Math.pow(BARRIER_Y - SCREEN_Y, 2));
+            let d2 = Math.sqrt(Math.pow(x - SLIT_2_X, 2) + Math.pow(BARRIER_Y - SCREEN_Y, 2));
+            let phaseDiff = (2 * Math.PI / lambda) * (Math.abs(d1 - d2)); 
+            
+            // 간섭항 (Interference)
+            let interference = Math.pow(Math.cos(phaseDiff / 2), 2);
+            // 가우시안 포락선 (중앙이 제일 밝음)
+            let envelope = Math.exp(-Math.pow(x - (CAN_W/2), 2) / 30000); 
+            
+            return interference * envelope;
+        }
+
+        class Particle {
+            constructor() {
+                this.x = GUN_X;
+                this.y = GUN_Y;
+                
+                // 위쪽을 향해 무작위 각도로 발사 (-120도 ~ -60도 사이)
+                let angle = -Math.PI/2 + (Math.random() - 0.5) * 1.2; 
+                let speed = 7 + Math.random() * 2;
+                
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                
+                this.status = 'moving'; // 'moving', 'stopped', 'hit'
+                this.history = []; // 궤적 그리기용
+            }
+
+            update() {
+                if (this.status !== 'moving') return;
+
+                this.history.push({x: this.x, y: this.y});
+                if (this.history.length > 8) this.history.shift(); // 꼬리 길이 제한
+
+                let nextX = this.x + this.vx;
+                let nextY = this.y + this.vy;
+
+                // 1. 중간 벽(Barrier) 충돌 체크
+                if (this.y > BARRIER_Y && nextY <= BARRIER_Y) {
+                    // 슬릿을 통과하는지 확인
+                    let inSlit1 = nextX > SLIT_1_X - SLIT_WIDTH/2 && nextX < SLIT_1_X + SLIT_WIDTH/2;
+                    let inSlit2 = nextX > SLIT_2_X - SLIT_WIDTH/2 && nextX < SLIT_2_X + SLIT_WIDTH/2;
+                    
+                    if (!inSlit1 && !inSlit2) {
+                        // 벽에 부딪힘 (막힘)
+                        this.status = 'stopped';
+                        this.y = BARRIER_Y;
+                        return;
+                    }
+                }
+
+                // 2. 상단 스크린 충돌 체크
+                if (this.y > SCREEN_Y && nextY <= SCREEN_Y) {
+                    this.status = 'hit';
+                    this.y = SCREEN_Y;
+                    let hitX = Math.floor(nextX);
+                    if (hitX >= 0 && hitX < CAN_W) {
+                        screenHits[hitX] += 1;
+                        if (screenHits[hitX] > maxHitCount) maxHitCount = screenHits[hitX];
+                    }
+                    return;
+                }
+
+                // 이동 적용
+                this.x = nextX;
+                this.y = nextY;
+            }
+
+            draw() {
+                if (this.status === 'hit') return;
+
+                // 지나온 궤적 선 그리기
+                if (this.history.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.history[0].x, this.history[0].y);
+                    for (let i=1; i<this.history.length; i++) {
+                        ctx.lineTo(this.history[i].x, this.history[i].y);
+                    }
+                    ctx.strokeStyle = this.status === 'stopped' ? 'rgba(100, 116, 139, 0.4)' : 'rgba(244, 63, 94, 0.8)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // 입자 본체
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = this.status === 'stopped' ? '#475569' : '#f43f5e';
+                ctx.fill();
+            }
+        }
+
+        class Wave {
+            constructor() {
+                this.radius = 0;
+                this.speed = 4;
+                this.opacity = 1.0;
+                this.hasReachedBarrier = false;
+                this.slitWaveRadius = 0; // 슬릿을 통과한 후 생기는 새로운 파동의 반지름
+            }
+
+            update() {
+                this.radius += this.speed;
+                
+                // 물결이 벽(슬릿)에 닿는 순간
+                if (GUN_Y - this.radius <= BARRIER_Y && !this.hasReachedBarrier) {
+                    this.hasReachedBarrier = true;
+                }
+
+                // 슬릿 통과 이후 (새로운 두 개의 파동원 생성 - 하위헌스의 원리)
+                if (this.hasReachedBarrier) {
+                    this.slitWaveRadius += this.speed;
+                    this.opacity -= 0.005; // 점점 희미해짐
+
+                    // 파동이 스크린에 닿을 때, 확률적으로 스크린에 자국(Hit)을 남김
+                    if (BARRIER_Y - this.slitWaveRadius <= SCREEN_Y) {
+                        // 스크린에 도달했으므로 간섭 확률에 따라 점을 찍음
+                        // 현실적인 속도를 위해 한 프레임에 여러 개의 점을 시도
+                        for(let i=0; i<3; i++) {
+                            let x = Math.random() * CAN_W;
+                            if (Math.random() < getWaveProbability(x)) {
+                                let hitX = Math.floor(x);
+                                screenHits[hitX] += 0.5; // 파동은 부드럽게 쌓이도록 0.5씩 증가
+                                if (screenHits[hitX] > maxHitCount) maxHitCount = screenHits[hitX];
+                            }
+                        }
+                        this.opacity -= 0.05; // 스크린 닿으면 빨리 사라짐
+                    }
+                }
+            }
+
+            draw() {
+                if (this.opacity <= 0) return;
+
+                ctx.lineWidth = 2;
+                
+                // 1. 총구에서 출발하는 메인 파동 (벽에 닿기 전)
+                if (this.radius > 0 && GUN_Y - this.radius > BARRIER_Y) {
+                    ctx.strokeStyle = `rgba(34, 211, 238, ${this.opacity * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(GUN_X, GUN_Y, this.radius, Math.PI, Math.PI*2);
+                    ctx.stroke();
+                }
+
+                // 2. 슬릿을 통과한 두 개의 파동 (간섭)
+                if (this.hasReachedBarrier && this.slitWaveRadius > 0) {
+                    ctx.strokeStyle = `rgba(34, 211, 238, ${this.opacity * 0.4})`;
+                    
+                    // 슬릿 1 파동
+                    ctx.beginPath();
+                    ctx.arc(SLIT_1_X, BARRIER_Y, this.slitWaveRadius, Math.PI, Math.PI*2);
+                    ctx.stroke();
+
+                    // 슬릿 2 파동
+                    ctx.beginPath();
+                    ctx.arc(SLIT_2_X, BARRIER_Y, this.slitWaveRadius, Math.PI, Math.PI*2);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function drawDetectorFilm() {
+            // 필름 배경
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(20, SCREEN_TOP, CAN_W - 40, SCREEN_BOTTOM - SCREEN_TOP);
+
+            let displayMax = Math.max(maxHitCount * 0.5, 5); // 밝기 조절용
+
+            // 배열을 순회하며 '무늬(band)'를 수직선으로 그림
+            for (let x = 20; x < CAN_W - 20; x++) {
+                if (screenHits[x] > 0) {
+                    // 스무딩 처리 (인접한 픽셀 평균)
+                    let sum = 0, count = 0;
+                    for(let i = -2; i <= 2; i++) {
+                        if(screenHits[x+i] !== undefined) {
+                            sum += screenHits[x+i];
+                            count++;
+                        }
+                    }
+                    let avg = sum / count;
+
+                    let intensity = Math.pow(avg / displayMax, 0.8); 
+                    if (intensity > 1) intensity = 1;
+                    
+                    let color = isObserving 
+                        ? `rgba(244, 63, 94, ${intensity})` 
+                        : `rgba(34, 211, 238, ${intensity})`;
+                    
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, SCREEN_TOP, 1, SCREEN_BOTTOM - SCREEN_TOP);
+                }
+            }
+
+            // 필름 테두리 및 텍스트
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(20, SCREEN_TOP, CAN_W - 40, SCREEN_BOTTOM - SCREEN_TOP);
+            ctx.fillStyle = '#64748b';
+            ctx.font = 'bold 14px Pretendard';
+            ctx.textAlign = 'center';
+            ctx.fillText("결과 스크린 (무늬가 누적되는 곳)", CAN_W / 2, SCREEN_TOP - 6);
+        }
+
+        function drawEnvironment() {
+            ctx.clearRect(0, 0, CAN_W, CAN_H);
+            drawDetectorFilm();
+
+            // 슬릿 벽면 그리기
+            ctx.fillStyle = '#64748b';
+            const wallH = 10;
+            ctx.fillRect(0, BARRIER_Y, SLIT_1_X - SLIT_WIDTH/2, wallH);
+            ctx.fillRect(SLIT_1_X + SLIT_WIDTH/2, BARRIER_Y, (SLIT_2_X - SLIT_WIDTH/2) - (SLIT_1_X + SLIT_WIDTH/2), wallH);
+            ctx.fillRect(SLIT_2_X + SLIT_WIDTH/2, BARRIER_Y, CAN_W - (SLIT_2_X + SLIT_WIDTH/2), wallH);
+
+            // 전자총 그리기
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath();
+            ctx.arc(GUN_X, GUN_Y, 24, Math.PI, 0);
+            ctx.fill();
+            
+            // 모드에 따라 총구 색상 변경
+            ctx.fillStyle = isObserving ? '#f43f5e' : '#22d3ee';
+            ctx.beginPath();
+            ctx.arc(GUN_X, GUN_Y - 5, 8, 0, Math.PI*2);
+            ctx.fill();
+
+            // 카메라 (관측기) 그리기
+            if (isObserving) {
+                // 탐지 영역 (빨간 불빛)
+                ctx.fillStyle = 'rgba(244, 63, 94, 0.08)';
+                ctx.beginPath();
+                ctx.moveTo(GUN_X, BARRIER_Y - 50);
+                ctx.lineTo(SLIT_1_X - 30, BARRIER_Y);
+                ctx.lineTo(SLIT_2_X + 30, BARRIER_Y);
+                ctx.fill();
+
+                // 카메라 본체
+                ctx.fillStyle = '#1e293b';
+                ctx.strokeStyle = '#f43f5e';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(GUN_X - 30, BARRIER_Y - 60, 60, 24, 8);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 카메라 렌즈
+                ctx.fillStyle = '#f43f5e';
+                ctx.beginPath();
+                ctx.arc(GUN_X, BARRIER_Y - 48, 6, 0, Math.PI*2);
+                ctx.fill();
+            } else {
+                // 꺼진 카메라
+                ctx.fillStyle = '#1e293b';
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(GUN_X - 30, BARRIER_Y - 60, 60, 24, 8);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.arc(GUN_X, BARRIER_Y - 48, 6, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+
+        let animationId;
+        let frameCount = 0;
+
+        function animate() {
+            drawEnvironment();
+            frameCount++;
+
+            if (isFiring) {
+                if (isObserving) {
+                    // 입자 모드: 매 프레임마다 여러 개의 전자를 마구잡이로 발사
+                    for(let i=0; i<3; i++) particles.push(new Particle());
+                } else {
+                    // 파동 모드: 일정 간격마다 새로운 물결 생성
+                    if (frameCount % 20 === 0) waves.push(new Wave());
+                }
+            }
+
+            // 입자 업데이트 및 그리기
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.update();
+                p.draw();
+                // 멈춘지 오래된 입자이거나 스크린에 맞은 입자는 메모리에서 제거
+                if (p.status === 'hit' || (p.status === 'stopped' && frameCount % 60 === 0 && Math.random() < 0.1)) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // 파동 업데이트 및 그리기
+            for (let i = waves.length - 1; i >= 0; i--) {
+                let w = waves[i];
+                w.update();
+                w.draw();
+                // 완전히 투명해진 파동 제거
+                if (w.opacity <= 0) waves.splice(i, 1);
+            }
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 버튼 이벤트 처리
+        toggleObserverBtn.addEventListener('click', () => {
+            isObserving = !isObserving;
+            
+            // 관측 상태 변경 시 기존 데이터 청소 (비교하기 쉽게)
+            screenHits.fill(0);
+            maxHitCount = 1;
+            particles = [];
+            waves = [];
+
+            if (isObserving) {
+                // 입자 상태 UI
+                observerIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> 카메라 끄기 (파동으로 보기)`;
+                toggleObserverBtn.classList.replace('from-rose-500', 'from-slate-600');
+                toggleObserverBtn.classList.replace('to-pink-600', 'from-slate-700');
+                toggleObserverBtn.classList.replace('shadow-[0_4px_15px_rgba(244,63,94,0.3)]', 'shadow-none');
+                
+                statusDot.classList.replace('bg-cyan-400', 'bg-rose-500');
+                statusDot.classList.replace('shadow-[0_0_12px_#22d3ee]', 'shadow-[0_0_12px_#f43f5e]');
+                
+                statusText.innerHTML = `
+                    <strong class="text-rose-400 text-xl mb-2 block">🔴 관측 중 (입자성)</strong>
+                    카메라를 켜서 쳐다보자, 전자는 물결이기를 포기하고 <b>야구공(입자)</b>처럼 행동합니다.<br>
+                    무작위로 날아간 전자 중 벽에 부딪히지 않고 <b>우연히 구멍을 통과한 녀석들만</b> 직진하여 스크린에 딱 <b>'두 줄'</b>을 남깁니다.
+                `;
+            } else {
+                // 파동 상태 UI
+                observerIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0l3.59 3.59"></path></svg> 관측 카메라 켜기 (입자로 보기)`;
+                toggleObserverBtn.classList.replace('from-slate-600', 'from-rose-500');
+                toggleObserverBtn.classList.replace('from-slate-700', 'to-pink-600');
+                toggleObserverBtn.classList.replace('shadow-none', 'shadow-[0_4px_15px_rgba(244,63,94,0.3)]');
+                
+                statusDot.classList.replace('bg-rose-500', 'bg-cyan-400');
+                statusDot.classList.replace('shadow-[0_0_12px_#f43f5e]', 'shadow-[0_0_12px_#22d3ee]');
+                
+                statusText.innerHTML = `
+                    <strong class="text-cyan-400 text-xl mb-2 block">🌊 관측 안 함 (파동성)</strong>
+                    전자가 <b>물결(파동)</b>처럼 퍼져나갑니다.<br>
+                    파동이 두 구멍을 동시에 통과한 뒤, 서로 겹치면서 <b>(간섭 현상)</b> 스크린에 여러 줄의 선명한 띠를 만듭니다.
+                `;
+            }
+        });
+
+        fireBtn.addEventListener('click', () => {
+            isFiring = !isFiring;
+            if (isFiring) {
+                fireBtn.innerHTML = "⏹️ 발사 중지";
+                fireBtn.classList.replace('from-cyan-400', 'from-amber-400');
+                fireBtn.classList.replace('to-blue-500', 'to-orange-500');
+                fireBtn.classList.replace('shadow-[0_4px_15px_rgba(6,182,212,0.3)]', 'shadow-[0_4px_15px_rgba(245,158,11,0.3)]');
+            } else {
+                fireBtn.innerHTML = "🚀 실험 시작 (발사)";
+                fireBtn.classList.replace('from-amber-400', 'from-cyan-400');
+                fireBtn.classList.replace('to-orange-500', 'to-blue-500');
+                fireBtn.classList.replace('shadow-[0_4px_15px_rgba(245,158,11,0.3)]', 'shadow-[0_4px_15px_rgba(6,182,212,0.3)]');
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            screenHits.fill(0);
+            maxHitCount = 1;
+            particles = [];
+            waves = [];
+        });
+
+        // 윈도우 로드 시 애니메이션 시작
+        window.onload = () => {
+            requestAnimationFrame(animate);
+        };
+
+    </script>
+</body>
+</html>
