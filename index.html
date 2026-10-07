@@ -1,533 +1,90 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>양자역학: 리얼 이중슬릿 실험 시뮬레이터</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Pretendard', sans-serif;
-            background-color: #0b1120;
-            color: #f8fafc;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        
-        #canvas-wrapper {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 4 / 3;
-            background: #020617;
-            border-radius: 1.5rem;
-            box-shadow: 0 0 50px rgba(14, 165, 233, 0.15), inset 0 0 20px rgba(0,0,0,0.5);
-            overflow: hidden;
-            border: 1px solid #1e293b;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        .btn-interactive {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .btn-interactive:hover {
-            transform: translateY(-3px) scale(1.02);
-            filter: brightness(1.1);
-        }
-        .btn-interactive:active {
-            transform: translateY(0) scale(0.98);
-        }
-
-        .text-gradient {
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-    </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>이중슬릿 실험 · 관측하면 무엇이 달라질까?</title>
+<style>
+:root{color-scheme:dark;--bg:#070d18;--surface:#101a2b;--border:#25344a;--text:#eff5ff;--muted:#b0bfd3;--wave:#61e6ed;--particle:#ffad75;--active:var(--wave)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 25% 0,#15304b,var(--bg) 65%);color:var(--text);font:15px/1.6 system-ui,-apple-system,"Segoe UI","Malgun Gothic",sans-serif}body.measured{--active:var(--particle)}button,input{font:inherit}button{cursor:pointer;color:inherit}button:focus-visible,input:focus-visible{outline:3px solid var(--active);outline-offset:4px}button:hover{filter:brightness(1.13)}button:disabled{cursor:default;opacity:.55}main{max-width:1450px;margin:auto;padding:30px 26px 24px}.top{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:23px}.kicker{color:var(--active);font-size:12px;letter-spacing:.12em;font-weight:700}h1{font-size:clamp(25px,3vw,39px);letter-spacing:-.055em;line-height:1.3;margin:6px 0 7px}.top p{color:var(--muted);margin:0}.full{border:1px solid var(--border);border-radius:10px;padding:9px 13px;background:#142238;white-space:nowrap;font-size:12px}.layout{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:18px;align-items:start}.stage{border:1px solid var(--border);border-radius:20px;background:#080f1e;overflow:hidden}.stage-head{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--border);gap:10px}.status{font-size:14px;font-weight:700;color:var(--active);display:flex;align-items:center;gap:8px}.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--active);box-shadow:0 0 15px var(--active)}.count{color:var(--muted);font-size:12px}.count strong{color:var(--text);font-size:17px;margin-left:7px;font-variant-numeric:tabular-nums}.canvas-box{position:relative;aspect-ratio:1000/620}canvas{display:block;width:100%;height:100%}.labels{position:absolute;inset:0;pointer-events:none;font-size:clamp(10px,1.1vw,14px);color:#c2d1e5}.labels span{position:absolute;text-align:center}.source-label{left:4.5%;top:58%;width:13%}.wall-label{left:27.4%;top:4.1%;width:15%}.screen-label{left:76.5%;top:4.1%;width:20%;color:var(--active)}.detector-label{left:30%;top:85%;width:25%;color:var(--active)}.slit-one{left:32%;top:34.7%;width:3%;font-weight:700}.slit-two{left:32%;top:51.7%;width:3%;font-weight:700}.flow-label{left:7%;top:91%;width:83%;font-size:11px;color:#8fa6c1}.legend{border-top:1px solid var(--border);padding:12px 20px;display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--muted)}.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--active);margin-right:7px}.legend .point{background:#fce8dc}.sidebar{display:grid;gap:15px}.card{border:1px solid var(--border);border-radius:17px;background:var(--surface);padding:20px}.card h2{font-size:16px;margin:0 0 14px}.observer{width:100%;border:1px solid #38717c;background:#173743;border-radius:14px;min-height:83px;padding:13px 15px;display:flex;align-items:center;gap:13px;text-align:left;color:var(--wave)}.observer svg{width:27px;height:27px;flex-shrink:0}.observer .words{flex:1}.observer small{font-size:11px;display:block;color:#bed5e2}.observer strong{font-size:18px}.switch{width:36px;height:21px;background:#244657;border-radius:100px;padding:3px}.switch::after{content:"";display:block;width:15px;height:15px;background:#a0bac8;border-radius:50%;transition:transform .2s}.measured .observer{background:#462d26;border-color:#956345;color:var(--particle)}.measured .switch{background:#986846}.measured .switch::after{background:#ffdabf;transform:translateX(15px)}.result-title{font-size:20px;line-height:1.5;color:var(--active);font-weight:750;letter-spacing:-.03em;margin:18px 0 7px}.description{font-size:14px;color:var(--muted);margin:0}.action{width:100%;border:1px solid var(--border);border-radius:11px;padding:11px 8px;background:#1a2941;font-weight:600;font-size:13px}.action.primary{background:var(--active);border-color:var(--active);color:#09202a;font-size:16px;margin-bottom:9px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.reset{margin-top:8px}.speed{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin:18px 0 4px}.speed output{color:var(--text)}input[type=range]{width:100%;accent-color:var(--active)}.tip{font-size:12px;color:var(--muted);margin:12px 0 0}.message{min-height:39px;font-size:12px;color:var(--active);margin:11px 0 0}.takeaway{border:1px solid var(--border);border-radius:14px;background:#111f32;padding:16px 20px;margin-top:16px;font-size:14px;display:flex;align-items:center;gap:12px}.takeaway b{color:var(--active);white-space:nowrap}.takeaway span{color:var(--muted)}details{margin-top:17px;font-size:12px;color:var(--muted)}summary{cursor:pointer}details p{margin:8px 0;max-width:1050px}footer{font-size:11px;color:#8fa4bf;margin-top:14px}@media(max-width:1000px){main{padding:23px 17px}.layout{grid-template-columns:minmax(0,1fr) 255px}.card{padding:16px}.result-title{font-size:18px}}@media(max-width:780px){.layout{grid-template-columns:1fr}.sidebar{grid-template-columns:1fr 1fr}.labels{font-size:13px}.flow-label{font-size:10px}.takeaway{align-items:flex-start}.top{margin-bottom:18px}}@media(max-width:480px){main{padding:18px 10px}.sidebar{grid-template-columns:1fr}.top p{font-size:13px}.top .full{padding:7px;font-size:11px}h1{font-size:26px}.labels{font-size:10px}.flow-label{font-size:8px}.stage-head{padding:12px}.status{font-size:12px}.count{font-size:11px}.count strong{font-size:14px}.legend{padding:10px 12px;gap:12px;font-size:11px}.takeaway{display:block;padding:14px}.takeaway b{display:block;margin-bottom:5px}}
+</style>
 </head>
-<body class="p-4 md:p-8">
-
-    <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        <!-- 왼쪽: 시뮬레이터 캔버스 -->
-        <div class="lg:col-span-8 flex flex-col w-full">
-            <h1 class="text-3xl md:text-4xl font-extrabold mb-2 text-center text-gradient bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400">
-                🔬 리얼리티 이중슬릿 시뮬레이터
-            </h1>
-            <p class="text-slate-400 text-center mb-6">파동의 간섭과 입자의 무작위 충돌을 직접 확인하세요!</p>
-            
-            <div id="canvas-wrapper">
-                <canvas id="simCanvas" width="800" height="600"></canvas>
-            </div>
-        </div>
-
-        <!-- 오른쪽: 조작 패널 -->
-        <div class="lg:col-span-4 flex flex-col gap-6 w-full lg:pt-20">
-            
-            <!-- 상태 표시 패널 -->
-            <div class="bg-slate-800/80 backdrop-blur p-6 rounded-2xl shadow-xl border border-slate-700">
-                <div class="flex items-center gap-3 mb-4">
-                    <div id="statusDot" class="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_12px_#22d3ee] animate-pulse"></div>
-                    <h2 class="text-2xl font-bold text-white tracking-tight">실험 원리</h2>
-                </div>
-                
-                <div class="bg-slate-900 p-5 rounded-xl border border-slate-700/50 min-h-[160px] flex items-center">
-                    <p id="statusText" class="text-slate-300 leading-relaxed text-[15px]">
-                        <strong class="text-cyan-400 text-xl mb-2 block">🌊 관측 안 함 (파동성)</strong>
-                        전자가 물결처럼 퍼져나갑니다.<br>
-                        파동이 두 구멍을 동시에 통과한 뒤, 서로 겹치면서 <b>(간섭 현상)</b> 스크린에 여러 줄의 선명한 띠를 만듭니다.
-                    </p>
-                </div>
-            </div>
-
-            <div class="bg-slate-800/80 backdrop-blur p-6 rounded-2xl shadow-xl border border-slate-700">
-                <h2 class="text-lg font-bold mb-5 text-slate-300">컨트롤</h2>
-                
-                <div class="flex flex-col gap-4">
-                    <button id="toggleObserverBtn" class="btn-interactive relative overflow-hidden group w-full py-4 px-4 rounded-xl font-bold text-white bg-gradient-to-r from-rose-500 to-pink-600 shadow-[0_4px_15px_rgba(244,63,94,0.3)]">
-                        <span id="observerIcon" class="relative z-10 flex items-center justify-center gap-2 text-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0l3.59 3.59"></path></svg>
-                            관측 카메라 켜기 (입자로 보기)
-                        </span>
-                    </button>
-
-                    <button id="fireBtn" class="btn-interactive w-full py-4 px-4 rounded-xl font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-blue-500 shadow-[0_4px_15px_rgba(6,182,212,0.3)] text-lg">
-                        🚀 실험 시작 (발사)
-                    </button>
-
-                    <button id="clearBtn" class="btn-interactive w-full py-3 px-4 rounded-xl font-semibold text-slate-300 bg-slate-700 hover:bg-slate-600 border border-slate-600 mt-2">
-                        🧹 필름 초기화
-                    </button>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        const toggleObserverBtn = document.getElementById('toggleObserverBtn');
-        const observerIcon = document.getElementById('observerIcon');
-        const fireBtn = document.getElementById('fireBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const statusText = document.getElementById('statusText');
-        const statusDot = document.getElementById('statusDot');
-
-        const CAN_W = 800;
-        const CAN_H = 600;
-        
-        // 레이아웃 좌표 설정
-        const SCREEN_TOP = 20;   
-        const SCREEN_BOTTOM = 110; 
-        const SCREEN_Y = 110;    
-        const BARRIER_Y = 320;   
-        const GUN_Y = 560;       
-        const GUN_X = CAN_W / 2;
-        
-        // 슬릿 설정 (입자가 넉넉히 통과할 수 있게 간격과 너비 조절)
-        const SLIT_WIDTH = 24;
-        const SLIT_1_X = 320;
-        const SLIT_2_X = 480;
-
-        let isObserving = false; // 카메라 켜짐 여부 (false: 파동, true: 입자)
-        let isFiring = false;
-        
-        let screenHits = new Array(CAN_W).fill(0);
-        let maxHitCount = 1;
-        
-        // 객체 배열
-        let particles = []; // 입자 모드용 총알들
-        let waves = [];     // 파동 모드용 물결들
-
-        // 파동 간섭 무늬 수학 모델 (빛의 간섭 공식 기반)
-        const lambda = 22; // 파장 (무늬 간격 결정)
-        function getWaveProbability(x) {
-            let d1 = Math.sqrt(Math.pow(x - SLIT_1_X, 2) + Math.pow(BARRIER_Y - SCREEN_Y, 2));
-            let d2 = Math.sqrt(Math.pow(x - SLIT_2_X, 2) + Math.pow(BARRIER_Y - SCREEN_Y, 2));
-            let phaseDiff = (2 * Math.PI / lambda) * (Math.abs(d1 - d2)); 
-            
-            // 간섭항 (Interference)
-            let interference = Math.pow(Math.cos(phaseDiff / 2), 2);
-            // 가우시안 포락선 (중앙이 제일 밝음)
-            let envelope = Math.exp(-Math.pow(x - (CAN_W/2), 2) / 30000); 
-            
-            return interference * envelope;
-        }
-
-        class Particle {
-            constructor() {
-                this.x = GUN_X;
-                this.y = GUN_Y;
-                
-                // 위쪽을 향해 무작위 각도로 발사 (-120도 ~ -60도 사이)
-                let angle = -Math.PI/2 + (Math.random() - 0.5) * 1.2; 
-                let speed = 7 + Math.random() * 2;
-                
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                
-                this.status = 'moving'; // 'moving', 'stopped', 'hit'
-                this.history = []; // 궤적 그리기용
-            }
-
-            update() {
-                if (this.status !== 'moving') return;
-
-                this.history.push({x: this.x, y: this.y});
-                if (this.history.length > 8) this.history.shift(); // 꼬리 길이 제한
-
-                let nextX = this.x + this.vx;
-                let nextY = this.y + this.vy;
-
-                // 1. 중간 벽(Barrier) 충돌 체크
-                if (this.y > BARRIER_Y && nextY <= BARRIER_Y) {
-                    // 슬릿을 통과하는지 확인
-                    let inSlit1 = nextX > SLIT_1_X - SLIT_WIDTH/2 && nextX < SLIT_1_X + SLIT_WIDTH/2;
-                    let inSlit2 = nextX > SLIT_2_X - SLIT_WIDTH/2 && nextX < SLIT_2_X + SLIT_WIDTH/2;
-                    
-                    if (!inSlit1 && !inSlit2) {
-                        // 벽에 부딪힘 (막힘)
-                        this.status = 'stopped';
-                        this.y = BARRIER_Y;
-                        return;
-                    }
-                }
-
-                // 2. 상단 스크린 충돌 체크
-                if (this.y > SCREEN_Y && nextY <= SCREEN_Y) {
-                    this.status = 'hit';
-                    this.y = SCREEN_Y;
-                    let hitX = Math.floor(nextX);
-                    if (hitX >= 0 && hitX < CAN_W) {
-                        screenHits[hitX] += 1;
-                        if (screenHits[hitX] > maxHitCount) maxHitCount = screenHits[hitX];
-                    }
-                    return;
-                }
-
-                // 이동 적용
-                this.x = nextX;
-                this.y = nextY;
-            }
-
-            draw() {
-                if (this.status === 'hit') return;
-
-                // 지나온 궤적 선 그리기
-                if (this.history.length > 1) {
-                    ctx.beginPath();
-                    ctx.moveTo(this.history[0].x, this.history[0].y);
-                    for (let i=1; i<this.history.length; i++) {
-                        ctx.lineTo(this.history[i].x, this.history[i].y);
-                    }
-                    ctx.strokeStyle = this.status === 'stopped' ? 'rgba(100, 116, 139, 0.4)' : 'rgba(244, 63, 94, 0.8)';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-
-                // 입자 본체
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
-                ctx.fillStyle = this.status === 'stopped' ? '#475569' : '#f43f5e';
-                ctx.fill();
-            }
-        }
-
-        class Wave {
-            constructor() {
-                this.radius = 0;
-                this.speed = 4;
-                this.opacity = 1.0;
-                this.hasReachedBarrier = false;
-                this.slitWaveRadius = 0; // 슬릿을 통과한 후 생기는 새로운 파동의 반지름
-            }
-
-            update() {
-                this.radius += this.speed;
-                
-                // 물결이 벽(슬릿)에 닿는 순간
-                if (GUN_Y - this.radius <= BARRIER_Y && !this.hasReachedBarrier) {
-                    this.hasReachedBarrier = true;
-                }
-
-                // 슬릿 통과 이후 (새로운 두 개의 파동원 생성 - 하위헌스의 원리)
-                if (this.hasReachedBarrier) {
-                    this.slitWaveRadius += this.speed;
-                    this.opacity -= 0.005; // 점점 희미해짐
-
-                    // 파동이 스크린에 닿을 때, 확률적으로 스크린에 자국(Hit)을 남김
-                    if (BARRIER_Y - this.slitWaveRadius <= SCREEN_Y) {
-                        // 스크린에 도달했으므로 간섭 확률에 따라 점을 찍음
-                        // 현실적인 속도를 위해 한 프레임에 여러 개의 점을 시도
-                        for(let i=0; i<3; i++) {
-                            let x = Math.random() * CAN_W;
-                            if (Math.random() < getWaveProbability(x)) {
-                                let hitX = Math.floor(x);
-                                screenHits[hitX] += 0.5; // 파동은 부드럽게 쌓이도록 0.5씩 증가
-                                if (screenHits[hitX] > maxHitCount) maxHitCount = screenHits[hitX];
-                            }
-                        }
-                        this.opacity -= 0.05; // 스크린 닿으면 빨리 사라짐
-                    }
-                }
-            }
-
-            draw() {
-                if (this.opacity <= 0) return;
-
-                ctx.lineWidth = 2;
-                
-                // 1. 총구에서 출발하는 메인 파동 (벽에 닿기 전)
-                if (this.radius > 0 && GUN_Y - this.radius > BARRIER_Y) {
-                    ctx.strokeStyle = `rgba(34, 211, 238, ${this.opacity * 0.5})`;
-                    ctx.beginPath();
-                    ctx.arc(GUN_X, GUN_Y, this.radius, Math.PI, Math.PI*2);
-                    ctx.stroke();
-                }
-
-                // 2. 슬릿을 통과한 두 개의 파동 (간섭)
-                if (this.hasReachedBarrier && this.slitWaveRadius > 0) {
-                    ctx.strokeStyle = `rgba(34, 211, 238, ${this.opacity * 0.4})`;
-                    
-                    // 슬릿 1 파동
-                    ctx.beginPath();
-                    ctx.arc(SLIT_1_X, BARRIER_Y, this.slitWaveRadius, Math.PI, Math.PI*2);
-                    ctx.stroke();
-
-                    // 슬릿 2 파동
-                    ctx.beginPath();
-                    ctx.arc(SLIT_2_X, BARRIER_Y, this.slitWaveRadius, Math.PI, Math.PI*2);
-                    ctx.stroke();
-                }
-            }
-        }
-
-        function drawDetectorFilm() {
-            // 필름 배경
-            ctx.fillStyle = '#020617';
-            ctx.fillRect(20, SCREEN_TOP, CAN_W - 40, SCREEN_BOTTOM - SCREEN_TOP);
-
-            let displayMax = Math.max(maxHitCount * 0.5, 5); // 밝기 조절용
-
-            // 배열을 순회하며 '무늬(band)'를 수직선으로 그림
-            for (let x = 20; x < CAN_W - 20; x++) {
-                if (screenHits[x] > 0) {
-                    // 스무딩 처리 (인접한 픽셀 평균)
-                    let sum = 0, count = 0;
-                    for(let i = -2; i <= 2; i++) {
-                        if(screenHits[x+i] !== undefined) {
-                            sum += screenHits[x+i];
-                            count++;
-                        }
-                    }
-                    let avg = sum / count;
-
-                    let intensity = Math.pow(avg / displayMax, 0.8); 
-                    if (intensity > 1) intensity = 1;
-                    
-                    let color = isObserving 
-                        ? `rgba(244, 63, 94, ${intensity})` 
-                        : `rgba(34, 211, 238, ${intensity})`;
-                    
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x, SCREEN_TOP, 1, SCREEN_BOTTOM - SCREEN_TOP);
-                }
-            }
-
-            // 필름 테두리 및 텍스트
-            ctx.strokeStyle = '#334155';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(20, SCREEN_TOP, CAN_W - 40, SCREEN_BOTTOM - SCREEN_TOP);
-            ctx.fillStyle = '#64748b';
-            ctx.font = 'bold 14px Pretendard';
-            ctx.textAlign = 'center';
-            ctx.fillText("결과 스크린 (무늬가 누적되는 곳)", CAN_W / 2, SCREEN_TOP - 6);
-        }
-
-        function drawEnvironment() {
-            ctx.clearRect(0, 0, CAN_W, CAN_H);
-            drawDetectorFilm();
-
-            // 슬릿 벽면 그리기
-            ctx.fillStyle = '#64748b';
-            const wallH = 10;
-            ctx.fillRect(0, BARRIER_Y, SLIT_1_X - SLIT_WIDTH/2, wallH);
-            ctx.fillRect(SLIT_1_X + SLIT_WIDTH/2, BARRIER_Y, (SLIT_2_X - SLIT_WIDTH/2) - (SLIT_1_X + SLIT_WIDTH/2), wallH);
-            ctx.fillRect(SLIT_2_X + SLIT_WIDTH/2, BARRIER_Y, CAN_W - (SLIT_2_X + SLIT_WIDTH/2), wallH);
-
-            // 전자총 그리기
-            ctx.fillStyle = '#94a3b8';
-            ctx.beginPath();
-            ctx.arc(GUN_X, GUN_Y, 24, Math.PI, 0);
-            ctx.fill();
-            
-            // 모드에 따라 총구 색상 변경
-            ctx.fillStyle = isObserving ? '#f43f5e' : '#22d3ee';
-            ctx.beginPath();
-            ctx.arc(GUN_X, GUN_Y - 5, 8, 0, Math.PI*2);
-            ctx.fill();
-
-            // 카메라 (관측기) 그리기
-            if (isObserving) {
-                // 탐지 영역 (빨간 불빛)
-                ctx.fillStyle = 'rgba(244, 63, 94, 0.08)';
-                ctx.beginPath();
-                ctx.moveTo(GUN_X, BARRIER_Y - 50);
-                ctx.lineTo(SLIT_1_X - 30, BARRIER_Y);
-                ctx.lineTo(SLIT_2_X + 30, BARRIER_Y);
-                ctx.fill();
-
-                // 카메라 본체
-                ctx.fillStyle = '#1e293b';
-                ctx.strokeStyle = '#f43f5e';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.roundRect(GUN_X - 30, BARRIER_Y - 60, 60, 24, 8);
-                ctx.fill();
-                ctx.stroke();
-                
-                // 카메라 렌즈
-                ctx.fillStyle = '#f43f5e';
-                ctx.beginPath();
-                ctx.arc(GUN_X, BARRIER_Y - 48, 6, 0, Math.PI*2);
-                ctx.fill();
-            } else {
-                // 꺼진 카메라
-                ctx.fillStyle = '#1e293b';
-                ctx.strokeStyle = '#475569';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.roundRect(GUN_X - 30, BARRIER_Y - 60, 60, 24, 8);
-                ctx.fill();
-                ctx.stroke();
-                ctx.fillStyle = '#334155';
-                ctx.beginPath();
-                ctx.arc(GUN_X, BARRIER_Y - 48, 6, 0, Math.PI*2);
-                ctx.fill();
-            }
-        }
-
-        let animationId;
-        let frameCount = 0;
-
-        function animate() {
-            drawEnvironment();
-            frameCount++;
-
-            if (isFiring) {
-                if (isObserving) {
-                    // 입자 모드: 매 프레임마다 여러 개의 전자를 마구잡이로 발사
-                    for(let i=0; i<3; i++) particles.push(new Particle());
-                } else {
-                    // 파동 모드: 일정 간격마다 새로운 물결 생성
-                    if (frameCount % 20 === 0) waves.push(new Wave());
-                }
-            }
-
-            // 입자 업데이트 및 그리기
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.update();
-                p.draw();
-                // 멈춘지 오래된 입자이거나 스크린에 맞은 입자는 메모리에서 제거
-                if (p.status === 'hit' || (p.status === 'stopped' && frameCount % 60 === 0 && Math.random() < 0.1)) {
-                    particles.splice(i, 1);
-                }
-            }
-
-            // 파동 업데이트 및 그리기
-            for (let i = waves.length - 1; i >= 0; i--) {
-                let w = waves[i];
-                w.update();
-                w.draw();
-                // 완전히 투명해진 파동 제거
-                if (w.opacity <= 0) waves.splice(i, 1);
-            }
-
-            animationId = requestAnimationFrame(animate);
-        }
-
-        // 버튼 이벤트 처리
-        toggleObserverBtn.addEventListener('click', () => {
-            isObserving = !isObserving;
-            
-            // 관측 상태 변경 시 기존 데이터 청소 (비교하기 쉽게)
-            screenHits.fill(0);
-            maxHitCount = 1;
-            particles = [];
-            waves = [];
-
-            if (isObserving) {
-                // 입자 상태 UI
-                observerIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg> 카메라 끄기 (파동으로 보기)`;
-                toggleObserverBtn.classList.replace('from-rose-500', 'from-slate-600');
-                toggleObserverBtn.classList.replace('to-pink-600', 'from-slate-700');
-                toggleObserverBtn.classList.replace('shadow-[0_4px_15px_rgba(244,63,94,0.3)]', 'shadow-none');
-                
-                statusDot.classList.replace('bg-cyan-400', 'bg-rose-500');
-                statusDot.classList.replace('shadow-[0_0_12px_#22d3ee]', 'shadow-[0_0_12px_#f43f5e]');
-                
-                statusText.innerHTML = `
-                    <strong class="text-rose-400 text-xl mb-2 block">🔴 관측 중 (입자성)</strong>
-                    카메라를 켜서 쳐다보자, 전자는 물결이기를 포기하고 <b>야구공(입자)</b>처럼 행동합니다.<br>
-                    무작위로 날아간 전자 중 벽에 부딪히지 않고 <b>우연히 구멍을 통과한 녀석들만</b> 직진하여 스크린에 딱 <b>'두 줄'</b>을 남깁니다.
-                `;
-            } else {
-                // 파동 상태 UI
-                observerIcon.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0l3.59 3.59"></path></svg> 관측 카메라 켜기 (입자로 보기)`;
-                toggleObserverBtn.classList.replace('from-slate-600', 'from-rose-500');
-                toggleObserverBtn.classList.replace('from-slate-700', 'to-pink-600');
-                toggleObserverBtn.classList.replace('shadow-none', 'shadow-[0_4px_15px_rgba(244,63,94,0.3)]');
-                
-                statusDot.classList.replace('bg-rose-500', 'bg-cyan-400');
-                statusDot.classList.replace('shadow-[0_0_12px_#f43f5e]', 'shadow-[0_0_12px_#22d3ee]');
-                
-                statusText.innerHTML = `
-                    <strong class="text-cyan-400 text-xl mb-2 block">🌊 관측 안 함 (파동성)</strong>
-                    전자가 <b>물결(파동)</b>처럼 퍼져나갑니다.<br>
-                    파동이 두 구멍을 동시에 통과한 뒤, 서로 겹치면서 <b>(간섭 현상)</b> 스크린에 여러 줄의 선명한 띠를 만듭니다.
-                `;
-            }
-        });
-
-        fireBtn.addEventListener('click', () => {
-            isFiring = !isFiring;
-            if (isFiring) {
-                fireBtn.innerHTML = "⏹️ 발사 중지";
-                fireBtn.classList.replace('from-cyan-400', 'from-amber-400');
-                fireBtn.classList.replace('to-blue-500', 'to-orange-500');
-                fireBtn.classList.replace('shadow-[0_4px_15px_rgba(6,182,212,0.3)]', 'shadow-[0_4px_15px_rgba(245,158,11,0.3)]');
-            } else {
-                fireBtn.innerHTML = "🚀 실험 시작 (발사)";
-                fireBtn.classList.replace('from-amber-400', 'from-cyan-400');
-                fireBtn.classList.replace('to-orange-500', 'to-blue-500');
-                fireBtn.classList.replace('shadow-[0_4px_15px_rgba(245,158,11,0.3)]', 'shadow-[0_4px_15px_rgba(6,182,212,0.3)]');
-            }
-        });
-
-        clearBtn.addEventListener('click', () => {
-            screenHits.fill(0);
-            maxHitCount = 1;
-            particles = [];
-            waves = [];
-        });
-
-        // 윈도우 로드 시 애니메이션 시작
-        window.onload = () => {
-            requestAnimationFrame(animate);
-        };
-
-    </script>
-</body>
-</html>
+<body><main>
+<header class="top"><div><div class="kicker">DOUBLE SLIT EXPERIMENT</div><h1>관측하면, 무늬가 달라집니다.</h1><p>어느 슬릿을 지났는지 측정해 보세요.</p></div><button class="full" id="fullscreen">전체 화면</button></header>
+<div class="layout"><div>
+<section class="stage"><div class="stage-head"><span class="status" id="status">경로 측정 꺼짐</span><span class="count">누적 검출 <strong id="count">0</strong>개</span></div>
+<div class="canvas-box"><canvas id="scene" width="1000" height="620" aria-label="측정을 끄면 파동과 간섭무늬, 켜면 개별 입자 검출과 두 개의 넓은 띠를 비교하는 이중슬릿 실험"></canvas><div class="labels" aria-hidden="true"><span class="source-label">전자원</span><span class="wall-label">두 개의 슬릿</span><span class="screen-label">검출 스크린</span><span class="detector-label" id="detectorLabel">경로 검출기 꺼짐</span><span class="slit-one">1</span><span class="slit-two">2</span><span class="flow-label" id="flowLabel">전자원 → 두 슬릿에서 퍼지는 확률 파동 → 한 점씩 검출</span></div></div>
+<div class="legend"><span><i></i><span id="legendText">퍼짐과 간섭을 나타내는 확률 파동</span></span><span><i class="point"></i>점 하나 = 전자 하나</span></div></section>
+<div class="takeaway"><b id="takeawayTitle">측정 꺼짐</b><span id="takeawayText">두 경로를 구분하지 않으면, 점들이 쌓여 여러 줄의 간섭무늬를 만듭니다.</span></div>
+</div><aside class="sidebar">
+<section class="card"><h2>경로를 관측해 볼까요?</h2><button class="observer" id="observer" aria-pressed="false" aria-label="슬릿 경로 측정 켜기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><path id="eyeSlash" d="M3 3l18 18"/></svg><span class="words"><small>어느 슬릿을 지났는지</small><strong id="observerWord">측정 꺼짐</strong></span><span class="switch" aria-hidden="true"></span></button>
+<p class="result-title" id="resultTitle">파동의 간섭<br>여러 줄의 무늬</p><p class="description" id="description">두 슬릿에서 퍼진 확률 파동이 겹칩니다. 점들이 쌓이면 밝고 어두운 띠가 나타납니다.</p><p class="tip">버튼을 바꾸면 새 스크린에서 시작합니다.</p></section>
+<section class="card"><h2>실험하기</h2><button class="action primary" id="run">▶ 실험 시작</button><div class="row"><button class="action" id="single">1개 보내기</button><button class="action" id="batch">무늬 빨리 보기</button></div><button class="action reset" id="reset">스크린 지우기</button><label class="speed" for="speed">발사 속도 <output id="speedValue">보통</output></label><input id="speed" type="range" min="1" max="3" value="2" aria-label="발사 속도"><p class="message" id="message" role="status">실험을 시작하거나, 전자 1개를 보내 보세요.</p></section>
+</aside></div>
+<details><summary>표현에 대한 짧은 설명</summary><p>파동 그림은 검출 확률을 보여 주는 개념도이며, 움직이는 입자 표식은 전파 순서를 표현한 것입니다. 실제 궤적을 측정한 영상이 아닙니다. 측정은 사람의 시선이 아니라 슬릿을 구분하는 장치와의 상호작용을 뜻합니다.</p><p>두 띠가 구분되는 이상적인 실험 조건을 사용했습니다. 각 슬릿의 회절이 남기 때문에 띠는 폭을 가지며, 사이와 주변에도 일부 점이 찍힐 수 있습니다. 비교를 쉽게 하려고 슬릿을 지나 표시된 스크린에 검출되는 전자만 보여 줍니다. 스크린 띠의 가로 위치는 점들을 구별하기 위한 임의 배치입니다. 누적된 점의 밝기는 무늬를 잘 볼 수 있게 조정합니다.</p></details>
+<footer>수업용 개념 시뮬레이터 · 외부 프로그램 설치 없이 실행됩니다.</footer>
+</main>
+<script>
+'use strict';
+(() => {
+const $=id=>document.getElementById(id),canvas=$('scene'),ctx=canvas.getContext('2d');
+const N=16384,L=1800,W=720,H=100;
+const G={wall:338,screen:826,top:80,height:460,center:310,scale:460/720,source:110};
+const state={observed:false,lambda:3,d:160,a:40,time:0,running:false,rate:40,accumulator:0,hits:0,events:[],flashes:[],rows:new Uint32Array(460)};
+const film=document.createElement('canvas');film.width=96;film.height=460;const fc=film.getContext('2d');
+const waveCanvas=document.createElement('canvas');waveCanvas.width=W;waveCanvas.height=H;const wc=waveCanvas.getContext('2d');
+let model,field,last=0,frame=0;
+// Radix-2 FFT: inverse includes normalization. FFT propagator is unitary.
+const reverse=new Uint32Array(N);for(let i=0;i<N;i++){let j=i,r=0;for(let k=0;k<Math.log2(N);k++){r=(r<<1)|(j&1);j>>=1;}reverse[i]=r;}
+const twiddle=[];for(let len=2;len<=N;len*=2){const co=new Float64Array(len/2),si=new Float64Array(len/2);for(let j=0;j<len/2;j++){co[j]=Math.cos(2*Math.PI*j/len);si[j]=Math.sin(2*Math.PI*j/len);}twiddle.push([co,si]);}
+function fft(re,im,inverse=false){for(let i=0;i<N;i++){const j=reverse[i];if(j>i){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}}let stage=0;for(let len=2;len<=N;len*=2){const half=len/2,[co,si]=twiddle[stage++];for(let i=0;i<N;i+=len)for(let j=0;j<half;j++){const k=i+j,l=k+half,s=inverse?si[j]:-si[j],tr=co[j]*re[l]-s*im[l],ti=co[j]*im[l]+s*re[l];re[l]=re[k]-tr;im[l]=im[k]-ti;re[k]+=tr;im[k]+=ti;}}if(inverse)for(let i=0;i<N;i++){re[i]/=N;im[i]/=N;}}
+function aperture(center){const re=new Float64Array(N),im=new Float64Array(N);for(let i=0;i<N;i++){const u=i-N/2+.5;re[i]=Math.max(0,Math.min(u+.5,center+state.a/2)-Math.max(u-.5,center-state.a/2));}fft(re,im);return{re,im};}
+function propagate(ap,z){const re=new Float64Array(N),im=new Float64Array(N);for(let i=0;i<N;i++){const f=(i<=N/2?i:i-N)/N,phase=-Math.PI*state.lambda*z*f*f,c=Math.cos(phase),s=Math.sin(phase);re[i]=ap.re[i]*c-ap.im[i]*s;im[i]=ap.re[i]*s+ap.im[i]*c;}fft(re,im,true);return{re,im};}
+function cdfOf(weights){let total=0;const cdf=new Float64Array(weights.length);for(let i=0;i<weights.length;i++){total+=weights[i];cdf[i]=total;}for(let i=0;i<cdf.length;i++)cdf[i]/=total;cdf[cdf.length-1]=1;return cdf;}
+function buildModel(){const ap=aperture(0),start=N/2-W/2;field={re:new Float32Array(W*H),im:new Float32Array(W*H),p:new Float32Array(W*H)};let end;
+for(let row=0;row<H;row++){const v=propagate(ap,L*(H-1-row)/(H-1));if(row===0)end=v;for(let x=0;x<W;x++){const i=start+x,j1=i+state.d/2,j2=i-state.d/2,j=row*W+x,r=v.re[j1]+v.re[j2],im=v.im[j1]+v.im[j2];field.re[j]=r;field.im[j]=im;field.p[j]=r*r+im*im;}}
+const off=new Float64Array(W),on=new Float64Array(W),p1=new Float64Array(W),p2=new Float64Array(W);
+for(let x=0;x<W;x++){const j1=start+x+state.d/2,j2=start+x-state.d/2,r1=end.re[j1],r2=end.re[j2],i1=end.im[j1],i2=end.im[j2];p1[x]=r1*r1+i1*i1;p2[x]=r2*r2+i2*i2;on[x]=p1[x]+p2[x];off[x]=(r1+r2)**2+(i1+i2)**2;}
+model={off,on,p1,p2,cdfOff:cdfOf(off),cdf1:cdfOf(p1),cdf2:cdfOf(p2)};
+}
+function sample(cdf){const r=Math.random();let lo=0,hi=cdf.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(cdf[mid]<r)lo=mid+1;else hi=mid;}return lo-W/2+Math.random();}
+function newEvent(){const slit=state.observed?(Math.random()<.5?1:2):null,hit=sample(slit===1?model.cdf1:slit===2?model.cdf2:model.cdfOff);return{born:state.time,observed:state.observed,slit,hit,y:G.center+hit*G.scale,slitFlash:false};}
+function send(){state.events.push(newEvent());}
+function arrive(e,flash=true){state.hits++;const y=e.y-G.top,x=8+Math.random()*80;state.rows[Math.min(459,Math.floor(y))]++;fc.fillStyle=e.observed?'rgba(255,190,137,.65)':'rgba(136,245,249,.65)';fc.beginPath();fc.arc(x,y,.75,0,Math.PI*2);fc.fill();if(flash)state.flashes.push({x:G.screen+x,y:e.y,born:state.time,type:'hit'});}
+function updateUI(){document.body.classList.toggle('measured',state.observed);$('count').textContent=state.hits.toLocaleString('ko-KR');$('status').textContent=state.observed?'경로 측정 켜짐':'경로 측정 꺼짐';$('observerWord').textContent=state.observed?'측정 켜짐':'측정 꺼짐';$('observer').setAttribute('aria-pressed',String(state.observed));$('observer').setAttribute('aria-label',state.observed?'슬릿 경로 측정 끄기':'슬릿 경로 측정 켜기');$('eyeSlash').style.display=state.observed?'none':'';$('detectorLabel').textContent=state.observed?'경로 검출기 켜짐':'경로 검출기 꺼짐';$('resultTitle').innerHTML=state.observed?'한 슬릿에서 검출<br>두 개의 넓은 띠':'파동의 간섭<br>여러 줄의 무늬';$('description').textContent=state.observed?'전자가 어느 슬릿을 지났는지 구분됩니다. 간섭무늬가 사라지고, 두 슬릿에서 나온 점들이 두 개의 넓은 띠를 만듭니다.':'두 슬릿에서 퍼진 확률 파동이 겹칩니다. 점들이 쌓이면 밝고 어두운 띠가 나타납니다.';$('legendText').textContent=state.observed?'움직이는 점 = 전파 과정의 표식':'퍼짐과 간섭을 나타내는 확률 파동';$('flowLabel').textContent=state.observed?'전자원 → 한 슬릿에서 경로 검출 → 한 점씩 검출':'전자원 → 두 슬릿에서 퍼지는 확률 파동 → 한 점씩 검출';$('takeawayTitle').textContent=state.observed?'측정 켜짐':'측정 꺼짐';$('takeawayText').textContent=state.observed?'경로를 구분하면 간섭이 사라집니다. 점들이 두 개의 넓은 띠로 쌓입니다.':'두 경로를 구분하지 않으면, 점들이 쌓여 여러 줄의 간섭무늬를 만듭니다.';$('run').textContent=state.running?'Ⅱ 발사 멈추기':'▶ 실험 시작';}
+function clear(){state.events=[];state.flashes=[];state.hits=0;state.rows.fill(0);state.accumulator=0;fc.clearRect(0,0,96,460);updateUI();}
+function waveImage(){const img=wc.createImageData(W,H),phase=state.time*3,co=Math.cos(phase),si=Math.sin(phase);for(let j=0;j<W*H;j++){const r=field.re[j]*co+field.im[j]*si,amp=Math.min(1,Math.pow(Math.abs(r),.8)*1.7),c=r>=0?[80,234,240]:[121,137,241],k=j*4;img.data[k]=c[0];img.data[k+1]=c[1];img.data[k+2]=c[2];img.data[k+3]=Math.floor(amp*190);}wc.putImageData(img,0,0);}
+function glow(x,y,r,color,alpha=1){ctx.save();ctx.globalAlpha=alpha;ctx.shadowColor=color;ctx.shadowBlur=13;ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore();}
+function drawBeam(){ctx.save();ctx.beginPath();ctx.rect(165,G.top,G.wall-165,G.height);ctx.clip();const alpha=state.running||state.events.length?.48:.16;for(let i=0;i<7;i++){const x=160+((state.time*100+i*31)%200);ctx.strokeStyle=`rgba(97,230,237,${alpha*(.7+(x-160)/600)})`;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,G.top+21);ctx.lineTo(x,G.top+G.height-21);ctx.stroke();}ctx.restore();}
+function drawWave(){if(frame%3===0)waveImage();ctx.save();ctx.beginPath();ctx.rect(G.wall,G.top,G.screen-G.wall,G.height);ctx.clip();ctx.setTransform(0,G.height/W,-(G.screen-G.wall)/H,0,G.screen,G.top);ctx.globalAlpha=state.running||state.events.length?.88:.45;ctx.drawImage(waveCanvas,0,0);ctx.restore();
+// Faint crests supplement the computed interference field; they are a conceptual wavefront overlay.
+ctx.save();ctx.beginPath();ctx.rect(G.wall+2,G.top,G.screen-G.wall-2,G.height);ctx.clip();ctx.lineWidth=1.2;for(const sy of [G.center-state.d/2*G.scale,G.center+state.d/2*G.scale])for(let n=0;n<8;n++){const radius=12+((state.time*85+n*65)%530);ctx.strokeStyle=`rgba(129,241,245,${.12*(1-radius/650)})`;ctx.beginPath();ctx.arc(G.wall,sy,radius,-Math.PI/2,Math.PI/2);ctx.stroke();}ctx.restore();}
+function drawParticle(e){const t=(state.time-e.born)/1.8,sy=G.center+(e.slit===1?-1:1)*state.d/2*G.scale;let x,y;if(t<.36){const p=t/.36;x=G.source+(G.wall-G.source)*p;y=G.center+(sy-G.center)*(p*p*(3-2*p));}else{const p=Math.min(1,(t-.36)/.64);x=G.wall+(G.screen-G.wall)*p;y=sy+(e.y-sy)*p;}glow(x,y,3.5,'#ffc28e');}
+function draw(){ctx.clearRect(0,0,1000,620);ctx.fillStyle='#080f1e';ctx.fillRect(0,0,1000,620);const color=state.observed?'#ffad75':'#61e6ed';
+ctx.fillStyle='#0c192a';ctx.fillRect(165,G.top,G.screen-165,G.height);if(!state.observed){drawBeam();drawWave();}
+// Subtle floor guides support depth, without numerical axes or plots.
+ctx.strokeStyle='#1d3048';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(164,552);ctx.lineTo(810,552);ctx.stroke();
+ctx.fillStyle='#1b2c43';ctx.beginPath();ctx.roundRect(61,280,90,61,11);ctx.fill();ctx.strokeStyle='#385674';ctx.stroke();ctx.fillStyle='#345974';ctx.fillRect(143,296,22,30);glow(154,311,6,color,.75);ctx.fillStyle='#16293d';ctx.fillRect(78,292,36,7);ctx.fillRect(78,311,23,7);
+// Absorbing mask. Only transmitted, screen-detected electrons are animated.
+ctx.fillStyle='#536982';ctx.fillRect(G.wall-7,G.top-10,14,G.height+20);for(const sign of [-1,1]){const y=G.center+sign*state.d/2*G.scale,h=state.a*G.scale;ctx.clearRect(G.wall-8,y-h/2,16,h);ctx.fillStyle=color;ctx.fillRect(G.wall-7,y-h/2-2,14,2);ctx.fillRect(G.wall-7,y+h/2,14,2);}
+// Path detectors are separate from the absorbing screen.
+for(const sign of [-1,1]){const y=G.center+sign*state.d/2*G.scale;ctx.fillStyle=state.observed?'#55392b':'#182737';ctx.strokeStyle=state.observed?'#bc865d':'#34465b';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(G.wall+14,y-24,24,48,7);ctx.fill();ctx.stroke();glow(G.wall+26,y,3,state.observed?'#ffc28e':'#5f7287',state.observed?.75:.35);}
+// Screen is a film of discrete events, never painted from a pre-made pattern.
+ctx.fillStyle='#152238';ctx.beginPath();ctx.roundRect(G.screen-4,G.top-7,104,G.height+14,8);ctx.fill();ctx.fillStyle='#080f1b';ctx.fillRect(G.screen,G.top,96,G.height);
+// Film exposure is derived only from accumulated detections, with a mild contrast adjustment.
+if(state.hits>500){const smooth=new Float32Array(460);let peak=1;for(let y=0;y<460;y++){let sum=0,n=0;for(let k=-2;k<=2;k++){if(y+k>=0&&y+k<460){sum+=state.rows[y+k];n++;}}smooth[y]=sum/n;peak=Math.max(peak,smooth[y]);}for(let y=0;y<460;y++){const alpha=Math.pow(smooth[y]/peak,2)*.56;ctx.fillStyle=state.observed?`rgba(255,173,117,${alpha})`:`rgba(97,230,237,${alpha})`;ctx.fillRect(G.screen+5,G.top+y,86,1);}ctx.globalAlpha=.45;}
+ctx.drawImage(film,G.screen,G.top);ctx.globalAlpha=1;ctx.strokeStyle='#456079';ctx.lineWidth=1;ctx.strokeRect(G.screen,G.top,96,G.height);
+if(state.observed)for(const e of state.events)drawParticle(e);else for(const e of state.events){const age=state.time-e.born;if(age<.55){const x=165+age/.55*(G.wall-165);ctx.strokeStyle='rgba(149,255,255,.75)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,G.top+22);ctx.lineTo(x,G.top+G.height-22);ctx.stroke();}else{const x=G.wall+(age-.55)/1.25*(G.screen-G.wall);ctx.save();ctx.beginPath();ctx.rect(G.wall,G.top,G.screen-G.wall,G.height);ctx.clip();ctx.fillStyle='rgba(119,241,245,.065)';ctx.fillRect(x-6,G.top,12,G.height);ctx.restore();}}
+for(const f of state.flashes){const t=state.time-f.born,alpha=Math.max(0,1-t/.55);glow(f.x,f.y,f.type==='slit'?5:3,color,alpha);ctx.save();ctx.globalAlpha=alpha*.7;ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(f.x,f.y,5+t*20,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+function tick(now){const dt=last?Math.min((now-last)/1000,.05):0;last=now;state.time+=dt;frame++;if(state.running){state.accumulator+=dt*state.rate;while(state.accumulator>=1){send();state.accumulator--;}}let changed=false;for(let i=state.events.length-1;i>=0;i--){const e=state.events[i],age=state.time-e.born;if(e.observed&&age>=1.8*.36&&!e.slitFlash){e.slitFlash=true;state.flashes.push({x:G.wall+26,y:G.center+(e.slit===1?-1:1)*state.d/2*G.scale,born:state.time,type:'slit'});}if(age>=1.8){arrive(e);state.events.splice(i,1);changed=true;}}state.flashes=state.flashes.filter(f=>state.time-f.born<.55);if(changed)$('count').textContent=state.hits.toLocaleString('ko-KR');draw();requestAnimationFrame(tick);}
+$('observer').onclick=()=>{state.observed=!state.observed;clear();$('message').textContent=state.observed?'새 스크린입니다. 두 개의 넓은 띠가 쌓이는지 보세요.':'새 스크린입니다. 여러 줄의 간섭무늬가 쌓이는지 보세요.';};
+$('run').onclick=()=>{state.running=!state.running;state.accumulator=0;updateUI();$('message').textContent=state.running?'전자를 보내고 있습니다. 점들이 쌓이는 모습을 보세요.':'발사를 멈췄습니다. 이동 중인 전자는 도착합니다.';};
+$('single').onclick=()=>{send();$('message').textContent='전자 1개를 보냈습니다. 스크린에는 점 1개가 찍힙니다.';};
+$('batch').onclick=()=>{for(let i=0;i<2500;i++)arrive(newEvent(),false);updateUI();$('message').textContent='2,500개의 개별 검출점을 빠르게 누적했습니다.';};
+$('reset').onclick=()=>{clear();$('message').textContent=state.running?'스크린을 지웠습니다. 같은 조건으로 발사를 이어갑니다.':'스크린을 지웠습니다. 다시 실험해 보세요.';};
+$('speed').oninput=()=>{const v=Number($('speed').value);state.rate=[0,5,40,100][v];$('speedValue').textContent=['','느리게','보통','빠르게'][v];};
+$('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{$('message').textContent='이 환경에서는 전체 화면을 사용할 수 없습니다.';}};
+document.addEventListener('visibilitychange',()=>{last=0;});
+buildModel();waveImage();updateUI();requestAnimationFrame(tick);
+})();
+</script>
+</body></html>
